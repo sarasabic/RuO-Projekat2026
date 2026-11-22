@@ -1,0 +1,26 @@
+# --- Terraform ---
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+*.tfvars
+crash.log
+# .terraform.lock.hcl IS committed (it pins provider versions)
+
+# --- secrets ---
+.secrets/
+.vault_pass
+ansible/group_vars/all/vault.yml
+.env
+app/.env
+
+# --- generated files ---
+ansible/inventory.yml
+ansible/collections/
+*.retry
+
+# --- local development ---
+node_modules/
+__pycache__/
+*.pyc
+.venv/

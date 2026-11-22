@@ -1,6 +1,17 @@
 name: ruo
 
 services:
+  frontend:
+    build: ./frontend
+    image: ruo/frontend:1.0
+    environment:
+      BACKEND_URL: http://backend:8000   
+    ports:
+      - "80:3000"                        
+    depends_on:
+      backend: { condition: service_healthy }
+    restart: unless-stopped
+
   backend:
     build: ./backend
     image: ruo/backend:1.0

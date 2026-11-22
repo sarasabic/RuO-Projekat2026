@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emoji Movie Quiz</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🎬 Emoji Movie Quiz</h1>
+    <p>Guess the movie from the emojis. 5 rounds, 10 points for every correct answer.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div id="start">
+        <form id="start-form">
+          <label for="player">Your name</label>
+          <input id="player" maxlength="20" required autocomplete="off" placeholder="e.g. Sara">
+          <button type="submit">Start game</button>
+        </form>
+      </div>
+
+      <div id="game" hidden>
+        <div class="status"><span id="round"></span><span id="score"></span></div>
+        <div id="emojis" class="emojis"></div>
+        <div id="year" class="hint"></div>
+        <form id="guess-form">
+          <input id="guess" autocomplete="off" placeholder="Movie title">
+          <button type="submit">Guess</button>
+          <button type="button" id="skip" class="secondary">Skip</button>
+        </form>
+        <p id="feedback" role="status"></p>
+        <button id="next" hidden>Next ➜</button>
+      </div>
+
+      <div id="over" hidden>
+        <h2 id="final"></h2>
+        <p>Your score is saved in the leaderboard.</p>
+        <button id="again">Play again</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🏆 Leaderboard</h2>
+      <table>
+        <thead><tr><th>#</th><th>Player</th><th>Points</th></tr></thead>
+        <tbody id="leaderboard"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer id="info">checking backend…</footer>
+  <script src="app.js"></script>
+</body>
+</html>

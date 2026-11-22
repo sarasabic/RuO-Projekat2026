@@ -1,0 +1,87 @@
+:root {
+  --bg: #14121a;
+  --card: #201d29;
+  --text: #f1eee6;
+  --muted: #a7a1b3;
+  --accent: #f5c518;
+  --good: #5fd38d;
+  --bad: #ff7a7a;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at top, #2a2340, var(--bg) 60%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header { text-align: center; padding: 2rem 1rem 1rem; }
+header h1 { margin: 0; font-size: 2.4rem; letter-spacing: 0.02em; }
+header p { color: var(--muted); }
+
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: min(960px, 100% - 2rem);
+  margin: 0 auto;
+  align-items: start;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+}
+
+form { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+label { width: 100%; color: var(--muted); }
+
+input {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #3a3547;
+  background: #15131c;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+button {
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+button.secondary { background: #3a3547; color: var(--text); }
+button:hover { filter: brightness(1.08); }
+
+.status { display: flex; justify-content: space-between; color: var(--muted); }
+.emojis { font-size: 4rem; text-align: center; margin: 1.2rem 0 0.3rem; }
+.hint { text-align: center; color: var(--muted); margin-bottom: 1rem; }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #332f3f; }
+th { color: var(--muted); font-weight: 600; }
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 1rem;
+}

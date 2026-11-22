@@ -1,5 +1,4 @@
 
-
 # --- 1: instaliranje dependencies ---
 FROM python:3.14-slim AS build
 WORKDIR /w

@@ -1,0 +1,13 @@
+{
+  "name": "ruo-frontend",
+  "version": "1.0.0",
+  "description": "Emoji Movie Quiz - frontend (static page + reverse proxy to the backend)",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "5.3.0"
+  }
+}

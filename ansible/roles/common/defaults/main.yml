@@ -3,3 +3,4 @@ common_packages:
   - curl
   - dnsutils        
   - htop
+  - python3-debian

@@ -5,13 +5,21 @@
     dest: "{{ docker_apt_keyring }}"
     mode: "0644"                    
 
-- name: Docker's apt repository, trusted only with that key
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch={{ docker_apt_arch }} signed-by={{ docker_apt_keyring }}]
-      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-    filename: docker
-    state: present                  
+- name: Docker's apt repository, trusted only with that key 
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_distribution_release }}"
+    components: stable
+    architectures: "{{ docker_apt_arch }}"
+    signed_by: "{{ docker_apt_keyring }}"   
+  register: docker_repo
+
+- name: Package list is refreshed right after the repository was added
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_repo.changed                   
 
 - name: Docker Engine, Compose and Buildx are installed
   ansible.builtin.apt:

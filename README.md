@@ -35,21 +35,9 @@ rezultate. Tablice posjeduje uloga `quiz_owner`, koja se ne može prijaviti (pri
 
 ## 2. Arhitektura (stvarni raspored)
 
-```
-Windows 11 ── browser: "make tunnel" → http://localhost:8080
-  └─ WSL2, Ubuntu 24.04 = admin mašina: Terraform, Ansible, make, dig    (repozitorij u ~/RuO-Projekat2026)
-       └─ KVM/libvirt mreža "ruo-net" 10.20.0.0/24 (NAT, gateway 10.20.0.1)
-            ├─ vm-dns  10.20.0.11   BIND 9, autoritativan za zonu sarasabicdns.lab
-            │                       ▲ RFC 2136 izmjene potpisane TSIG ključem tf-key (Terraform)
-            │                       ▲ DNS upiti frontenda i backenda
-            └─ vm-app  10.20.0.10   Docker
-                 ├─ segment web 10.30.1.0/24             frontend .10   ◄── port 80 VM-a → 3000 (jedini ulaz)
-                 ├─ segment app 10.30.2.0/24             backend  .10   frontend .20
-                 └─ segment db  10.30.3.0/24 (internal)  db       .10   backend  .20   + volume dbdata
+![Stvarni raspored: dvije VM u libvirt mreži unutar WSL2, tri Docker segmenta na vm-app](docs/arhitektura.png)
 
-tok zahtjeva:  browser → frontend → backend → db        (frontend → db: nema mrežnog puta)
-imena:         frontend / backend / db / vm-app / vm-dns .sarasabicdns.lab, www → vm-app
-```
+Tok zahtjeva: **browser → frontend → backend → baza**. Frontend nema mrežni put do baze.
 
 - **Terraform** (`terraform/vm`) preko libvirt/KVM pravi vlastitu NAT mrežu `ruo-net` i dvije VM sa
   fiksnim adresama, te generiše Ansible inventory.
@@ -122,10 +110,10 @@ RuO-Projekat2026/
 │   ├── requirements.yml   # kolekcija community.docker
 │   ├── config.yml         # role common, dns, docker
 │   ├── deploy.yml         # rola app
-│   ├── group_vars/all/    # vars.yml(vault.yml nije u Gitu)
+│   ├── group_vars/all/    # vars.yml, vault.yml.example (vault.yml nije u Gitu)
 │   └── roles/             # common, docker, dns, app (AO-5)
 ├── tests/                 # lib.sh, vm.sh, dns.sh, isolation.sh, app.sh, drift.sh
-├── docs/                  # PDF: dizajnerske odluke i ADR-ovi
+├── docs/                  # PDF s dizajnerskim odlukama i ADR-ovima, arhitektura.png
 ├── Makefile
 ├── .gitignore
 └── README.md
@@ -136,28 +124,74 @@ baze), podjela Ansiblea na `config.yml` i `deploy.yml` (između njih `make dns` 
 `docs/`. Generisani i tajni fajlovi nisu u Gitu (`.gitignore`): `ansible/inventory.yml`,
 `ansible/collections/`, `ansible/group_vars/all/vault.yml`, `.secrets/`, `*.tfstate`, `.terraform/`.
 
-## 6. Pokretanje projekta (WSL)
+## 6. Pokretanje od praznog računara
 
-Preduvjet: WSL2 sa Ubuntu 24.04 i alati s predmeta (Terraform, libvirt/KVM, Ansible). `make check`
-provjerava da je sve instalirano.
+Sve naredbe se izvršavaju u **WSL-u (Ubuntu 24.04)**, osim prve, koja se izvršava u Windows PowerShellu.
+
+### 6.1 Priprema (jednom)
+
+1. **WSL2 sa Ubuntu 24.04** (Windows PowerShell):
+   ```powershell
+   wsl --install -d Ubuntu-24.04
+   ```
+   VM-ovi rade unutar WSL-a, pa mora raditi ugniježđena virtualizacija: u Ubuntu `ls -l /dev/kvm` mora
+   pokazati uređaj. Ako ga nema, u `%UserProfile%\.wslconfig` dodati `[wsl2]` i
+   `nestedVirtualization=true`, pa u PowerShellu `wsl --shutdown`.
+2. **Alati** (Terraform, libvirt/KVM, dig, nsupdate) skriptom s predmeta:
+   ```bash
+   git clone https://github.com/Dadyze/RuO-2026-27.git ~/RuO-2026-27
+   cd ~/RuO-2026-27 && SKIP_K8S=1 ./00-setup.sh
+   ```
+   Zatim u PowerShellu `wsl --shutdown`, ponovo otvoriti Ubuntu i pokrenuti skriptu još jednom
+   (aktivira grupe `libvirt`/`kvm` i pravi libvirt pool `default`).
+3. **Ansible** (paket iz Ubuntua je prestar, zato PPA):
+   ```bash
+   sudo add-apt-repository --yes --update ppa:ansible/ansible && sudo apt install -y ansible
+   ```
+4. **Repozitorij projekta** (mora biti u `~/`, ne pod `/mnt/c`, jer Ansible tada ignoriše `ansible.cfg`):
+   ```bash
+   git clone https://github.com/sarasabic/RuO-Projekat2026.git ~/RuO-Projekat2026
+   cd ~/RuO-Projekat2026
+   ```
+
+Docker na WSL-u nije potreban: Docker radi samo na `vm-app`, a instalira ga Ansible.
+
+### 6.2 Podizanje, test i uklanjanje
+
+Tačan redoslijed naredbi (iz `~/RuO-Projekat2026`):
 
 ```bash
-git clone https://github.com/sarasabic/RuO-Projekat2026.git ~/RuO-Projekat2026
-cd ~/RuO-Projekat2026
-
-make check     # provjera alata
-make all       # podizanje: infra → config → dns → deploy (prvi put oko 15 minuta)
-make test      # testovi: SSH, DNS, izolacija mreže, aplikacija
-make destroy   # uklanjanje svega što je projekat kreirao
+make check     # 1. provjera alata, /dev/kvm i libvirta; pravi SSH ključ ako ne postoji
+make all       # 2. podizanje: infra → config → dns → deploy (prvi put oko 15 minuta)
+make test      # 3. testovi: SSH, DNS (dig), izolacija mreže, aplikacija i trajnost podataka
+make all       # 4. drugo izvršavanje: bez promjena (dokaz idempotentnosti, odjeljak 9.2)
+make drift     # 5. demonstracija drifta DNS zapisa (odjeljak 9.3)
+make destroy   # 6. uklanjanje svega što je projekat kreirao
 ```
 
-Aplikacija u Windows browseru: `make tunnel`, pa `http://localhost:8080`.
+`make all` redom pokreće:
+
+| Korak | Šta radi |
+|---|---|
+| `make infra` | Terraform: mreža `ruo-net`, VM-ovi `vm-app` i `vm-dns`, Ansible inventory |
+| `make config` | Ansible: osnovna konfiguracija, BIND na `vm-dns`, Docker na `vm-app` |
+| `make dns` | Terraform: DNS zapisi servisa |
+| `make deploy` | Ansible: kopiranje aplikacije na `vm-app` i pokretanje kontejnera |
+
+Pri prvom `make all` automatski se pokreću i `make secrets` (nasumične lozinke baze u šifrovanom
+vaultu) i `make image` (preuzimanje Ubuntu slike). `make destroy` čuva vault i preuzetu sliku, pa
+ponovno podizanje ide brže.
+
+### 6.3 Pristup aplikaciji
+
+- Iz WSL-a: `curl http://10.20.0.10/api/info`
+- U Windows browseru: `make tunnel`, pa `http://localhost:8080` (mreža 10.20.0.0/24 postoji samo unutar WSL-a).
 
 ## 7. Tajne (AO-9)
 
 | Tajna | Odakle dolazi | U Gitu? |
 |---|---|---|
-| lozinke baze | `make secrets` ih generiše nasumično i šifruje ansible-vaultom u `ansible/group_vars/all/vault.yml` | ne |
+| lozinke baze | `make secrets` ih generiše nasumično i šifruje ansible-vaultom u `ansible/group_vars/all/vault.yml` | samo primjer `vault.yml.example` |
 | lozinka vaulta | `.secrets/vault_pass`, generiše je `make secrets` | ne |
 | TSIG ključ | generiše ga rola `dns` na `vm-dns` (`tsig-keygen`); Ansible ga kopira u `.secrets/tf-key.key`, `make` ga Terraformu predaje kao `TF_VAR_tsig_secret` | ne |
 | privatni SSH ključ | `~/.ssh/id_ed25519` na admin mašini; u cloud-init ide samo javni ključ | ne |
@@ -350,4 +384,3 @@ tačka i prilagođeni projektu:
 | `s5/p2` (provider `hashicorp/dns`, drift sa `nsupdate`) | `terraform/dns`, `tests/drift.sh` |
 | `s6/p3` (vlasnička i aplikacijska uloga baze) | `app/db/init/` |
 | `Makefile` s predmeta (prefiks `>`, banneri) | `Makefile` |
-

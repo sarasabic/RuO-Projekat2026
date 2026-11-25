@@ -1,0 +1,5 @@
+# Primjer (kao iz s3/p2). Pravi file, vault.yml,je kreiran sa
+# "make secrets" sa random lozinkama, enkriptovan sa ansible-vault, i nije u Gitu.
+
+vault_postgres_password: "example-only-not-used"
+vault_app_db_password: "example-only-not-used"

@@ -93,4 +93,3 @@ $("next").addEventListener("click", safe(() => nextPuzzle()));
 $("again").addEventListener("click", () => show("start"));
 
 loadLeaderboard().catch(() => {});
-loadInfo();

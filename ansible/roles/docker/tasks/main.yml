@@ -1,0 +1,34 @@
+
+- name: Docker's signing key (verifies that packages really come from Docker)
+  ansible.builtin.get_url:
+    url: "{{ docker_apt_key_url }}"
+    dest: "{{ docker_apt_keyring }}"
+    mode: "0644"                    
+
+- name: Docker's apt repository, trusted only with that key
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ docker_apt_arch }} signed-by={{ docker_apt_keyring }}]
+      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present                  
+
+- name: Docker Engine, Compose and Buildx are installed
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+    cache_valid_time: 3600
+    lock_timeout: 600
+
+- name: Docker is running and starts at boot
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Admin user may use docker without sudo
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true                    
+  loop: "{{ docker_users }}"

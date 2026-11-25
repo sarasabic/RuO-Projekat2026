@@ -1,0 +1,10 @@
+app_dir: /opt/ruo-app                       
+app_config_dir: /etc/ruo-app                
+app_env_file: "{{ app_config_dir }}/app.env"
+app_src: "{{ playbook_dir }}/../app"        
+app_parts:                                  
+  - compose.yaml
+  - frontend
+  - backend
+  - db
+app_wait_timeout: 300    

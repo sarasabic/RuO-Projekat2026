@@ -1,0 +1,13 @@
+- name: Base packages are installed
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present                
+    update_cache: true
+    cache_valid_time: 3600        
+    lock_timeout: 600             
+
+- name: Time zone is Europe/Sarajevo
+  ansible.builtin.file:
+    src: /usr/share/zoneinfo/Europe/Sarajevo
+    dest: /etc/localtime
+    state: link

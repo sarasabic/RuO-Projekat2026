@@ -1,0 +1,35 @@
+
+- name: Directories for the source and the runtime configuration
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ app_dir }}", mode: "0755" }
+    - { path: "{{ app_config_dir }}", mode: "0750" }
+
+- name: Application source is on the VM
+  ansible.builtin.copy:
+    src: "{{ app_src }}/{{ item }}"         
+    dest: "{{ app_dir }}/"
+    owner: root
+  loop: "{{ app_parts }}"
+  register: app_source                      
+
+- name: Runtime configuration with secrets, readable by root only 
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: "{{ app_env_file }}"
+    owner: root
+    mode: "0600"
+  no_log: true                              # nnikad ne ispisuje password u Ansible-u
+
+- name: Stack is up and healthy (images are rebuilt only when the source changed)
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    env_files: ["{{ app_env_file }}"]
+    build: "{{ 'always' if app_source.changed else 'policy' }}"
+    state: present
+    wait: true
+    wait_timeout: "{{ app_wait_timeout }}"

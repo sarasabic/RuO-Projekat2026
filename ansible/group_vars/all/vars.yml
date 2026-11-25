@@ -1,4 +1,5 @@
-zone: sarasabicdns.lab              
+zone: sarasabicdns.lab     
+dns_ttl: 300          
 
 postgres_password: "{{ vault_postgres_password }}"
 app_db_password: "{{ vault_app_db_password }}"

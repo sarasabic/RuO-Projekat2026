@@ -1,0 +1,73 @@
+
+- name: BIND 9 is installed
+  ansible.builtin.apt:
+    name: [bind9, bind9-utils]
+    state: present
+    cache_valid_time: 3600
+    lock_timeout: 600
+
+- name: TSIG key for Terraform is generated once, on the server (never in Git, AO-9)
+  ansible.builtin.shell: "tsig-keygen -a hmac-sha256 {{ dns_tsig_key_name }} > {{ dns_tsig_key_file }}"
+  args:
+    creates: "{{ dns_tsig_key_file }}"     
+  notify: restart named
+
+- name: TSIG key is readable only by root and the bind group
+  ansible.builtin.file:
+    path: "{{ dns_tsig_key_file }}"
+    owner: root
+    group: bind
+    mode: "0640"
+
+- name: Server options (authoritative only, no recursion, no zone transfers)
+  ansible.builtin.template:
+    src: named.conf.options.j2
+    dest: /etc/bind/named.conf.options
+    owner: root
+    group: bind
+    mode: "0644"
+  notify: restart named
+
+- name: Zones of the project
+  ansible.builtin.template:
+    src: named.conf.local.j2
+    dest: /etc/bind/named.conf.local
+    owner: root
+    group: bind
+    mode: "0644"
+  notify: restart named
+
+- name: Initial project zone (created ONCE; afterwards BIND owns it because of dynamic updates)
+  ansible.builtin.template:
+    src: db.zone.j2
+    dest: "{{ dns_zone_file }}"
+    owner: bind
+    group: bind
+    mode: "0644"
+    force: false                          
+  notify: restart named
+
+- name: Reverse zone of the VM network (static, PTR records from the inventory)
+  ansible.builtin.template:
+    src: db.reverse.j2
+    dest: "{{ dns_reverse_file }}"
+    owner: root
+    group: bind
+    mode: "0644"
+  notify: restart named
+
+- name: Configuration and zones are valid (named-checkconf -z loads every zone)
+  ansible.builtin.command: named-checkconf -z
+  changed_when: false
+
+- name: BIND is running and starts at boot
+  ansible.builtin.service:
+    name: named
+    state: started
+    enabled: true
+
+- name: Copy of the TSIG key on the admin machine for Terraform (.secrets/ is gitignored)
+  ansible.builtin.fetch:
+    src: "{{ dns_tsig_key_file }}"
+    dest: "{{ dns_tsig_local_copy }}"
+    flat: true

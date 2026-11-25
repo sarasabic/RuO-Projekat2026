@@ -1,0 +1,9 @@
+; {{ ansible_managed }}
+
+$TTL {{ dns_ttl }}
+@       IN SOA  ns1.{{ dns_zone }}. hostmaster.{{ dns_zone }}. (
+                {{ dns_reverse_serial }} 3600 600 1209600 {{ dns_ttl }} )
+@       IN NS   ns1.{{ dns_zone }}.
+{% for host in groups['all'] | sort %}
+{{ hostvars[host]['ansible_host'].split('.')[-1] }}      IN PTR  {{ host }}.{{ dns_zone }}.
+{% endfor %}

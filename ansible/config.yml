@@ -19,6 +19,12 @@
   roles:
     - common
 
+- name: DNS server
+  hosts: dns                        
+  become: true
+  roles:
+    - dns
+
 - name: Docker host
   hosts: app                        
   become: true

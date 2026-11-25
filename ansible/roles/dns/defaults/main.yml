@@ -1,0 +1,12 @@
+dns_zone: "{{ zone }}"
+dns_tsig_key_name: tf-key
+dns_tsig_key_file: "/etc/bind/{{ dns_tsig_key_name }}.key"
+
+dns_zone_file: "/var/lib/bind/db.{{ dns_zone }}"
+
+dns_reverse_zone: "{{ (dns_server_ip.split('.')[:3] | reverse | join('.')) }}.in-addr.arpa"
+dns_reverse_file: "/etc/bind/db.{{ dns_reverse_zone }}"
+
+dns_reverse_serial: 2026112501
+
+dns_tsig_local_copy: "{{ playbook_dir }}/../.secrets/{{ dns_tsig_key_name }}.key"

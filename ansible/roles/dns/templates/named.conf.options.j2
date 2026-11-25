@@ -1,0 +1,13 @@
+// {{ ansible_managed }}
+
+options {
+    directory "/var/cache/bind";
+
+    listen-on { 127.0.0.1; {{ dns_server_ip }}; };
+    listen-on-v6 { none; };
+
+    recursion no;               
+    allow-transfer { none; };   
+
+    dnssec-validation no;       
+};

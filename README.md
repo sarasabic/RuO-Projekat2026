@@ -2,13 +2,10 @@
 
 **Računarstvo u oblaku 2026/27** · Univerzitet u Zenici, Politehnički fakultet · Sara Šabić
 
-Kompletna infrastruktura za troslojnu web aplikaciju opisana isključivo kodom: virtuelne mašine
+Kompletna infrastruktura za troslojnu web aplikaciju opisana kodom: virtuelne mašine
 (Terraform + libvirt), početna konfiguracija (cloud-init), konfiguracija servera (Ansible role),
 kontejneri (Docker Compose), segmentirana mreža i vlastita DNS zona (BIND, DNS zapisi kao Terraform
 resursi). Okruženje se podiže sa `make all`, provjerava sa `make test` i uklanja sa `make destroy`.
-
-Dizajnerske odluke (DO-1 – DO-9) i ADR-ovi su u PDF dokumentu
-[`docs/RuO-projekat-DO-ADR-Sara-Sabic.pdf`](docs/RuO-projekat-DO-ADR-Sara-Sabic.pdf).
 
 ## 1. Aplikacija
 
@@ -354,16 +351,3 @@ tačka i prilagođeni projektu:
 | `s6/p3` (vlasnička i aplikacijska uloga baze) | `app/db/init/` |
 | `Makefile` s predmeta (prefiks `>`, banneri) | `Makefile` |
 
-## 12. Rješavanje problema
-
-| Simptom | Uzrok i rješenje |
-|---|---|
-| `make check`: `NEDOSTAJE /dev/kvm` | ugniježđena virtualizacija nije uključena: `.wslconfig` sa `nestedVirtualization=true`, pa `wsl --shutdown` |
-| `virsh`: `Permission denied` | grupe `libvirt`/`kvm` još nisu aktivne: `wsl --shutdown` i ponovo otvoriti Ubuntu |
-| libvirt: `Could not open '...': Permission denied` (disk) | AppArmor: `security_driver = "none"` u `/etc/libvirt/qemu.conf`, pa `sudo systemctl restart libvirtd` |
-| Ansible ignoriše `ansible.cfg` | repozitorij je pod `/mnt/c`; mora biti u `~/` |
-| prvo pokretanje dugo čeka na apt | Ubuntu nakon prvog pokretanja radi automatske nadogradnje i drži apt lock (`lock_timeout: 600`) |
-| `make dns`: `BADTIME` / `tsig verify failure` | sat u WSL-u se pomjerio (npr. nakon sleep-a): `sudo hwclock -s` ili `wsl --shutdown` |
-| `toomanyrequests` pri izgradnji slika | ograničenje Docker Huba za anonimna preuzimanja: sačekati ili `docker login` na `vm-app` |
-| `ssh`: `REMOTE HOST IDENTIFICATION HAS CHANGED` | VM je ponovo kreirana: `ssh-keygen -R 10.20.0.10` (`make destroy` to radi sam) |
-| Windows browser ne otvara 10.20.0.10 | očekivano, mreža postoji samo u WSL-u: `make tunnel` |
